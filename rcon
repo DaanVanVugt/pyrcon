@@ -1,0 +1,54 @@
+#!/usr/bin/python
+import socket,getopt,sys
+
+class RCON:
+    def __init__(self, host, port, password):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #dgram is udp
+        self.host = host
+        self.port = port
+        self.password = password
+
+    def send(self,cmd):
+        self.socket.sendto("\xff\xff\xff\xff rcon \"%s\" %s" % (self.password, cmd), (self.host, self.port))
+        data,addr = self.socket.recvfrom(8192)
+        return data[10:]
+
+
+def main(args):
+    try:
+        host = args[0]
+        port = int(args[1])
+        password = args[2]
+    except IndexError:
+        help()
+    try:
+        command = args[3]
+    except IndexError:
+        command = ''
+
+    conn = RCON(host,port,password)
+    if not command == '':
+        print conn.send(command)
+        sys.exit(0)
+    #create a console
+    while 1:
+        try:
+            data = raw_input('> ')
+        except EOFError:
+            print ''
+            sys.exit(0)
+        if data in ('quit','exit'):
+            sys.exit(0)
+        print conn.send(data)
+
+
+def help():
+    print "\n".join(('usage: rcon host port password [command]',
+    'if command is not specified you get a rcon console'))
+    sys.exit(0)
+
+
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
